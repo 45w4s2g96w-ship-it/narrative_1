@@ -11,12 +11,9 @@ body {
   background: transparent;
   color: #1a1a1a;
   overflow: hidden;
+  height: 240px;
 }
-.wrap {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-}
+.wrap { position: relative; width: 100%; overflow: hidden; }
 .screen {
   width: 100%;
   padding: 1.5rem 1rem;
@@ -24,17 +21,9 @@ body {
   margin: 0 auto;
   transition: opacity 0.35s ease, transform 0.35s ease;
 }
-.screen.hidden {
-  display: none;
-}
-.screen.slide-out {
-  opacity: 0;
-  transform: translateX(-40px);
-}
-.screen.slide-in-from-right {
-  opacity: 0;
-  transform: translateX(40px);
-}
+.screen.hidden { display: none; }
+.screen.slide-out { opacity: 0; transform: translateX(-40px); }
+.screen.slide-in-from-right { opacity: 0; transform: translateX(40px); }
 label {
   display: block;
   font-size: 13px;
@@ -65,25 +54,11 @@ input:focus { border-color: #555; }
 }
 .btn:hover { background: #333; }
 .btn:active { background: #000; }
-.btn-back {
-  width: 100%;
-  padding: 10px;
-  font-size: 14px;
-  background: transparent;
-  color: #666;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-top: 12px;
-  transition: background 0.15s;
-}
-.btn-back:hover { background: #f5f5f5; }
 .result-card {
   border: 1px solid #e5e5e5;
   border-radius: 12px;
   padding: 1.25rem;
   background: #fff;
-  margin-bottom: 0;
 }
 .result-header {
   font-size: 16px;
@@ -101,6 +76,7 @@ input:focus { border-color: #555; }
 }
 .time-label { font-size: 14px; color: #666; }
 .time-value { font-size: 15px; font-weight: 500; color: #1a1a1a; }
+.time-range { font-size: 15px; font-weight: 500; color: #1a1a1a; }
 .notice {
   margin-top: 1rem;
   font-size: 12px;
@@ -143,7 +119,6 @@ input:focus { border-color: #555; }
 
   <div class="screen hidden" id="screenResult">
     <div id="resultContent"></div>
-    <button class="btn-back" onclick="goBack()">← 다시 조회하기</button>
   </div>
 
 </div>
@@ -184,31 +159,6 @@ function transitionTo(fromId, toId) {
       });
     });
   }, 350);
-}
-
-function goBack() {
-  const from = document.getElementById('screenResult');
-  const to = document.getElementById('screenInput');
-  from.style.opacity = '0';
-  from.style.transform = 'translateX(40px)';
-  from.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-  setTimeout(() => {
-    from.classList.add('hidden');
-    from.style.opacity = '';
-    from.style.transform = '';
-    from.style.transition = '';
-    to.classList.remove('hidden');
-    to.style.opacity = '0';
-    to.style.transform = 'translateX(-40px)';
-    to.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        to.style.opacity = '';
-        to.style.transform = '';
-      });
-    });
-    setTimeout(() => { to.style.transition = ''; }, 350);
-  }, 300);
 }
 
 async function doSearch() {
@@ -259,16 +209,12 @@ async function doSearch() {
           <span class="time-value">연남장 (서대문구 연희로5길 22)</span>
         </div>
         <div class="time-row">
-          <span class="time-label">면접장 도착 시간</span>
+          <span class="time-label">면접장 도착</span>
           <span class="time-value">${arrive || '-'}</span>
         </div>
         <div class="time-row">
-          <span class="time-label">시작 시간</span>
-          <span class="time-value">${start || '-'}</span>
-        </div>
-        <div class="time-row">
-          <span class="time-label">종료 시간</span>
-          <span class="time-value">${end || '-'}</span>
+          <span class="time-label">면접 시간</span>
+          <span class="time-range">${start || '-'} – ${end || '-'}</span>
         </div>
         <p class="notice">*면접은 10분간 진행되며, 입퇴장이 포함된 시간입니다.</p>
       </div>
