@@ -141,6 +141,7 @@ function getProp(props, key, type) {
   if (type === 'title') return p.title?.map(t => t.plain_text).join('') || '';
   if (type === 'rich_text') return p.rich_text?.map(t => t.plain_text).join('') || '';
   if (type === 'select') return p.select?.name || '';
+  if (type === 'date') return p.date?.start || '';
   return '';
 }
 
@@ -197,13 +198,19 @@ async function doSearch() {
     const props = data.results[0].properties;
     const name   = getProp(props, '이름', 'title');
     const type   = getProp(props, '유형', 'rich_text') || getProp(props, '유형', 'select');
+    const group  = getProp(props, '그룹', 'rich_text') || getProp(props, '그룹', 'select');
+    const date   = getProp(props, '날짜', 'date') || getProp(props, '날짜', 'rich_text');
     const arrive = getProp(props, '면접장 도착', 'rich_text');
     const start  = getProp(props, '시작', 'rich_text');
     const end    = getProp(props, '종료', 'rich_text');
 
     document.getElementById('resultContent').innerHTML = `
       <div class="result-card">
-        <div class="result-header">${name} - ${type || '-'}</div>
+        <div class="result-header">${name} - ${type || '-'} / ${group || '-'}그룹</div>
+        <div class="time-row">
+          <span class="time-label">면접 날짜</span>
+          <span class="time-value">${date || '-'}</span>
+        </div>
         <div class="time-row">
           <span class="time-label">면접 장소</span>
           <span class="time-value">연남장 (서대문구 연희로5길 22)</span>
