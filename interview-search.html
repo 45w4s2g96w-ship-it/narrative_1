@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>면접 시간 조회</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+  background: transparent;
+  color: #1a1a1a;
+  padding: 1.5rem 1rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+label {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 6px;
+}
+input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+  margin-bottom: 12px;
+  transition: border-color 0.15s;
+}
+input:focus { border-color: #555; }
+button {
+  width: 100%;
+  padding: 11px;
+  font-size: 15px;
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+button:hover { background: #333; }
+button:active { background: #000; }
+.result-card {
+  margin-top: 1.5rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: #fff;
+}
+.result-header {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+.time-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+}
+.time-label { font-size: 14px; color: #666; }
+.time-value { font-size: 15px; font-weight: 500; color: #1a1a1a; }
+.notice {
+  margin-top: 1rem;
+  font-size: 12px;
+  color: #999;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f0f0f0;
+  line-height: 1.6;
+}
+.error {
+  margin-top: 1rem;
+  font-size: 14px;
+  color: #c0392b;
+  padding: 12px;
+  background: #fdf0ef;
+  border-radius: 8px;
+}
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="field">
+  <label>이름</label>
+  <input type="text" id="nameInput" placeholder="이름 입력 (예: 홍길동)" maxlength="10" />
+</div>
+<div class="field">
+  <label>연락처 뒷 4자리</label>
+  <input type="text" id="phoneInput" placeholder="숫자 4자리 입력 (예: 5678)" maxlength="4" inputmode="numeric" />
+</div>
+<button onclick="doSearch()">면접 시간 조회</button>
+<div id="result" class="hidden"></div>
+
+<script>
+function maskName(name) {
+  const n = name.length;
+  if (n <= 1) return name;
+  const starCount = n <= 3 ? 1 : Math.floor(n / 2);
+  const start = Math.floor((n - starCount) / 2);
+  return name.slice(0, start) + '*'.repeat(starCount) + name.slice(start + starCount);
+}
+
+function maskPhone(phone4) {
+  if (phone4.length < 2) return phone4 + '**';
+  return phone4.slice(0, 2) + '**';
+}
+
+function getProp(props, key, type) {
+  const p = props[key];
+  if (!p) return '';
+  if (type === 'title') return p.title?.map(t => t.plain_text).join('') || '';
+  if (type === 'rich_text') return p.rich_text?.map(t => t.plain_text).join('') || '';
+  if (type === 'select') return p.select?.name || '';
+  return '';
+}
+
+async function doSearch() {
+  const nameRaw = document.getElementById('nameInput').value.trim();
+  const phone4 = document.getElementById('phoneInput').value.trim();
+  const resultEl = document.getElementById('result');
+
+  if (!nameRaw || phone4.length !== 4) {
+    resultEl.className = 'error';
+    resultEl.textContent = '이름과 연락처 뒷 4자리를 모두 입력해주세요.';
+    return;
+  }
+
+  const maskedName = maskName(nameRaw);
+  const maskedPhone = maskPhone(phone4);
+
+  resultEl.className = 'result-card';
+  resultEl.innerHTML = '<p style="font-size:14px;color:#999">조회 중...</p>';
+
+  try {
+    const res = await fetch(
+      'https://narrative.aa01064822791.workers.dev/search?name=' +
+      encodeURIComponent(maskedName) +
+      '&phone=' +
+      encodeURIComponent(maskedPhone)
+    );
+    const data = await res.json();
+
+    if (!data.results || data.results.length === 0) {
+      resultEl.className = 'error';
+      resultEl.textContent = '일치하는 면접 정보를 찾을 수 없습니다. 이름과 연락처를 다시 확인해주세요.';
+      return;
+    }
+
+    const props = data.results[0].properties;
+    const name   = getProp(props, '이름', 'title');
+    const type   = getProp(props, '유형', 'rich_text') || getProp(props, '유형', 'select');
+    const arrive = getProp(props, '면접장 도착', 'rich_text');
+    const start  = getProp(props, '시작', 'rich_text');
+    const end    = getProp(props, '종료', 'rich_text');
+
+    resultEl.className = 'result-card';
+    resultEl.innerHTML = `
+      <div class="result-header">${name} - ${type || '-'}</div>
+      <div class="time-row">
+        <span class="time-label">면접장 도착 시간</span>
+        <span class="time-value">${arrive || '-'}</span>
+      </div>
+      <div class="time-row">
+        <span class="time-label">시작 시간</span>
+        <span class="time-value">${start || '-'}</span>
+      </div>
+      <div class="time-row">
+        <span class="time-label">종료 시간</span>
+        <span class="time-value">${end || '-'}</span>
+      </div>
+      <p class="notice">*면접은 10분간 진행되며, 입퇴장이 포함된 시간입니다.</p>
+    `;
+  } catch (e) {
+    resultEl.className = 'error';
+    resultEl.textContent = '조회 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+  }
+}
+
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('phoneInput').focus();
+});
+document.getElementById('phoneInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+</script>
+</body>
+</html>
